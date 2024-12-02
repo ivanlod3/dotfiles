@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/zsh
 
 # Configuración de la instalación
 DOTFILES_REPO="https://github.com/ivanlod3/dotfiles.git"
@@ -11,19 +11,11 @@ clone_dotfiles() {
   fi
 }
 
-# Función para crear enlaces simbólicos a los archivos de configuración
-create_symlinks() {
-  # ln -sf "$DOTFILES_DIR/.zshrc" "$HOME/.zshrc"
-  # ln -sf "$DOTFILES_DIR/.bashrc" "$HOME/.bashrc"
-  # ln -sf "$DOTFILES_DIR/.vimrc" "$HOME/.vimrc"
-}
-
-# Instala los plugins y el tema de Oh My Zsh
+# Configura Oh My Zsh
 #
-# 1. Instala los plugins de Oh My Zsh
-# 2. Instala el tema "powerlevel10k"
-# 3. Agrega los plugins y el tema a la configuración de Oh My Zsh
-# 4. Recarga la configuración de Oh My Zsh
+# Instala los plugins de Oh My Zsh necesarios para la configuración de Devcontainers,
+# y los agrega a la configuración de Oh My Zsh. 
+# (COMENTADO) También instala el tema de Oh My Zsh "powerlevel10k".
 configure_ohmyzsh() {
   # Instala los plugins de Oh My Zsh
   git clone https://github.com/zsh-users/zsh-autosuggestions.git $ZSH_CUSTOM/plugins/zsh-autosuggestions
@@ -34,16 +26,15 @@ configure_ohmyzsh() {
 
   # Instala el tema "powerlevel10k"
   # git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
+  # sed -i 's/ZSH_THEME=".*"/ZSH_THEME="powerlevel10k/powerlevel10k"/g' $HOME/.zshrc
 
   # Agrega los plugins y el tema a la configuración de Oh My Zsh
   sed -i 's/plugins=(git)/plugins=(git zsh-autosuggestions zsh-syntax-highlighting fast-syntax-highlighting zsh-autocomplete you-should-use)/g' $HOME/.zshrc
-  # sed -i 's/ZSH_THEME=".*"/ZSH_THEME="powerlevel10k/powerlevel10k"/g' $HOME/.zshrc
 
   # Recarga la configuración de Oh My Zsh
   source $HOME/.zshrc
 }
 
-# Ejecuta las funciones en orden
+# Configura Oh My Zsh
 clone_dotfiles
-create_symlinks
 configure_ohmyzsh

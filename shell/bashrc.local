@@ -1,0 +1,162 @@
+case $- in
+  *i*) ;;
+  *) return ;;
+esac
+
+export DOTFILES_HOME="${DOTFILES_HOME:-$HOME/.dotfiles}"
+
+if [ -d "$HOME/.local/bin" ]; then
+  PATH="$HOME/.local/bin:$PATH"
+fi
+if [ -d "$HOME/bin" ]; then
+  PATH="$HOME/bin:$PATH"
+fi
+export PATH
+
+export EDITOR="${EDITOR:-vim}"
+export VISUAL="${VISUAL:-$EDITOR}"
+export PAGER="${PAGER:-less}"
+
+shopt -s checkwinsize cmdhist histappend
+HISTCONTROL=ignoreboth:erasedups
+HISTSIZE=50000
+HISTFILESIZE=100000
+
+if [ -n "${BASH_VERSION:-}" ] && [ "${BASH_VERSINFO[0]:-0}" -ge 5 ]; then
+  bind 'set show-all-if-ambiguous on'
+  bind 'set completion-ignore-case on'
+  bind 'set mark-symlinked-directories on'
+  bind 'set menu-complete-display-prefix on'
+fi
+
+if [ -r /etc/bash_completion ]; then
+  . /etc/bash_completion
+elif [ -r /usr/share/bash-completion/bash_completion ]; then
+  . /usr/share/bash-completion/bash_completion
+elif [ -r /usr/local/etc/bash_completion ]; then
+  . /usr/local/etc/bash_completion
+elif [ -r /opt/homebrew/etc/profile.d/bash_completion.sh ]; then
+  . /opt/homebrew/etc/profile.d/bash_completion.sh
+fi
+
+if [ -r "$HOME/.local/share/blesh/ble.sh" ]; then
+  source -- "$HOME/.local/share/blesh/ble.sh" --attach=none
+fi
+
+if command -v fzf >/dev/null 2>&1; then
+  if [ -r "$HOME/.fzf.bash" ]; then
+    . "$HOME/.fzf.bash"
+  elif [ -r /usr/share/fzf/completion.bash ]; then
+    . /usr/share/fzf/completion.bash
+    [ -r /usr/share/fzf/key-bindings.bash ] && . /usr/share/fzf/key-bindings.bash
+  elif [ -r /opt/homebrew/opt/fzf/shell/completion.bash ]; then
+    . /opt/homebrew/opt/fzf/shell/completion.bash
+    [ -r /opt/homebrew/opt/fzf/shell/key-bindings.bash ] && . /opt/homebrew/opt/fzf/shell/key-bindings.bash
+  fi
+fi
+
+if command -v zoxide >/dev/null 2>&1; then
+  eval "$(zoxide init bash)"
+fi
+
+if [ -r /usr/share/git-core/contrib/completion/git-prompt.sh ]; then
+  . /usr/share/git-core/contrib/completion/git-prompt.sh
+elif [ -r /usr/share/doc/git/contrib/completion/git-prompt.sh ]; then
+  . /usr/share/doc/git/contrib/completion/git-prompt.sh
+fi
+
+if [ -r /usr/share/bash-completion/completions/git ]; then
+  . /usr/share/bash-completion/completions/git
+  if declare -F ___git_complete >/dev/null 2>&1 && declare -F __git_main >/dev/null 2>&1; then
+    ___git_complete git __git_main
+  fi
+fi
+
+if command -v starship >/dev/null 2>&1; then
+  eval "$(starship init bash)"
+fi
+
+if [ -f /proc/version ] && grep -qi microsoft /proc/version 2>/dev/null; then
+  export IS_WSL=1
+fi
+
+if [ -f /run/.containerenv ] || [ -f /.dockerenv ]; then
+  if [ "${CONTAINER_ID:-}" = "dev" ] || [ "${HOSTNAME:-}" = "dev" ]; then
+    export NVM_DIR="$HOME/.config/nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+    [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
+  fi
+fi
+
+alias ll='ls -alF'
+alias la='ls -A'
+alias l='ls -CF'
+
+if command -v eza >/dev/null 2>&1; then
+  alias ls='eza --group-directories-first'
+  alias ll='eza -la --group-directories-first'
+fi
+
+if command -v bat >/dev/null 2>&1; then
+  alias cat='bat --paging=never'
+fi
+
+if ! command -v starship >/dev/null 2>&1; then
+  __dotfiles_prompt_command() {
+    local exit_status=$?
+    local reset='\[\e[0m\]'
+    local green='\[\e[38;5;78m\]'
+    local blue='\[\e[38;5;111m\]'
+    local gray='\[\e[38;5;245m\]'
+    local amber='\[\e[38;5;221m\]'
+    local red='\[\e[38;5;203m\]'
+    local container=''
+    local container_name=''
+    local git_segment=''
+    local prompt_char='$'
+
+    if [ -n "${CONTAINER_ID:-}" ] || [ -f /run/.containerenv ] || [ -f /.dockerenv ]; then
+      container_name="${CONTAINER_ID:-${HOSTNAME:-ctr}}"
+      container="${amber}[box:${container_name}]${reset} "
+    fi
+
+    if declare -F __git_ps1 >/dev/null 2>&1; then
+      git_segment="$(__git_ps1 ' '"${blue}"'(%s)'"${reset}")"
+    fi
+
+    if [ "$EUID" -eq 0 ]; then
+      prompt_char='#'
+    fi
+
+    if [ "$exit_status" -eq 0 ]; then
+      PS1="${container}${green}\u${gray}@${green}\h${reset}:${blue}\w${reset}${git_segment}\n${gray}${prompt_char}${reset} "
+    else
+      PS1="${container}${green}\u${gray}@${green}\h${reset}:${blue}\w${reset}${git_segment} ${red}[${exit_status}]${reset}\n${gray}${prompt_char}${reset} "
+    fi
+  }
+
+  PROMPT_COMMAND=__dotfiles_prompt_command
+fi
+
+if [ -n "${BLE_VERSION-}" ]; then
+  bleopt complete_auto_complete=1
+  bleopt complete_auto_complete_opts=suppress-after-complete
+  bleopt complete_menu_complete=1
+  bleopt complete_menu_filter=1
+  bleopt complete_menu_style=align
+  ble-face -s auto_complete none
+  ble-face -s auto_complete 'fg=244,italic'
+  ble-face -s menu_complete_match fg=110
+  ble-face -s menu_complete_selected 'fg=255,bg=236'
+  ble-face -s menu_desc_default fg=245
+  ble-face -s menu_filter_input 'fg=252,bg=236'
+  ble-face -s syntax_error 'fg=203,underline'
+  ble-face -s syntax_command fg=78
+  ble-bind -f 'C-left' backward-cword
+  ble-bind -f 'C-right' forward-cword
+  ble-bind -f 'C-BS' delete-backward-cword
+  ble-bind -f 'C-delete' delete-forward-cword
+  ble-bind -f 'M-BS' kill-backward-cword
+  ble-bind -f 'M-d' kill-word
+  ble-attach
+fi

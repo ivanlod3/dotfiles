@@ -65,11 +65,20 @@ elif [ -r /usr/share/doc/git/contrib/completion/git-prompt.sh ]; then
   . /usr/share/doc/git/contrib/completion/git-prompt.sh
 fi
 
+GIT_PS1_SHOWDIRTYSTATE=1
+GIT_PS1_SHOWSTASHSTATE=1
+GIT_PS1_SHOWUNTRACKEDFILES=1
+GIT_PS1_SHOWUPSTREAM=auto
+
 if [ -r /usr/share/bash-completion/completions/git ]; then
   . /usr/share/bash-completion/completions/git
   if declare -F ___git_complete >/dev/null 2>&1 && declare -F __git_main >/dev/null 2>&1; then
     ___git_complete git __git_main
   fi
+fi
+
+if [ -r "$DOTFILES_HOME/shell/starship.toml" ]; then
+  export STARSHIP_CONFIG="$DOTFILES_HOME/shell/starship.toml"
 fi
 
 if command -v starship >/dev/null 2>&1; then
@@ -102,36 +111,79 @@ if command -v bat >/dev/null 2>&1; then
 fi
 
 if ! command -v starship >/dev/null 2>&1; then
+  __dotfiles_git_segment() {
+    local status_output=''
+    local branch=''
+    local dirty=''
+    local ahead_behind=''
+    local reset='\[\e[0m\]'
+    local lime='\[\e[38;5;46m\]'
+    local red='\[\e[38;5;203m\]'
+
+    if ! branch="$(git symbolic-ref --quiet --short HEAD 2>/dev/null)"; then
+      branch="$(git rev-parse --short HEAD 2>/dev/null)" || return 0
+    fi
+
+    status_output="$(git status --porcelain=2 --branch 2>/dev/null)" || return 0
+    ahead_behind="$(printf '%s\n' "$status_output" | sed -n 's/^# branch.ab +\([0-9]\+\) -\([0-9]\+\)$/\1 \2/p')"
+    if [ -n "$ahead_behind" ]; then
+      set -- $ahead_behind
+      ahead_behind=''
+      [ "${1:-0}" -gt 0 ] && ahead_behind="+$1"
+      if [ "${2:-0}" -gt 0 ]; then
+        if [ -n "$ahead_behind" ]; then
+          ahead_behind="$ahead_behind -$2"
+        else
+          ahead_behind="-$2"
+        fi
+      fi
+      [ -n "$ahead_behind" ] && ahead_behind=" $ahead_behind"
+    fi
+
+    if printf '%s\n' "$status_output" | grep -qv '^#'; then
+      dirty=" ${red}x|${reset}"
+    fi
+
+    printf ' %s±|%s%s%s' "$lime" "$branch" "$ahead_behind" "$reset"
+    if [ -n "$dirty" ]; then
+      printf '%b' "$dirty"
+    fi
+  }
+
   __dotfiles_prompt_command() {
     local exit_status=$?
     local reset='\[\e[0m\]'
-    local green='\[\e[38;5;78m\]'
-    local blue='\[\e[38;5;111m\]'
+    local cyan='\[\e[38;5;45m\]'
+    local teal='\[\e[38;5;37m\]'
+    local lime='\[\e[38;5;46m\]'
     local gray='\[\e[38;5;245m\]'
     local amber='\[\e[38;5;221m\]'
     local red='\[\e[38;5;203m\]'
     local container=''
     local container_name=''
     local git_segment=''
-    local prompt_char='$'
+    local prompt_arrow='➜'
+    local current_time=''
+    local cwd=''
 
     if [ -n "${CONTAINER_ID:-}" ] || [ -f /run/.containerenv ] || [ -f /.dockerenv ]; then
       container_name="${CONTAINER_ID:-${HOSTNAME:-ctr}}"
       container="${amber}[box:${container_name}]${reset} "
     fi
 
-    if declare -F __git_ps1 >/dev/null 2>&1; then
-      git_segment="$(__git_ps1 ' '"${blue}"'(%s)'"${reset}")"
-    fi
+    git_segment="$(__dotfiles_git_segment)"
 
     if [ "$EUID" -eq 0 ]; then
-      prompt_char='#'
+      prompt_arrow='#'
     fi
 
+    current_time="$(date +%H:%M:%S)"
+    cwd='\w'
+
     if [ "$exit_status" -eq 0 ]; then
-      PS1="${container}${green}\u${gray}@${green}\h${reset}:${blue}\w${reset}${git_segment}\n${gray}${prompt_char}${reset} "
+      PS1="${cyan}${current_time}${reset} ${gray}\u@\h${reset} ${teal}${cwd}${reset}${git_segment} ${container}${lime}${prompt_arrow}${reset} "
     else
-      PS1="${container}${green}\u${gray}@${green}\h${reset}:${blue}\w${reset}${git_segment} ${red}[${exit_status}]${reset}\n${gray}${prompt_char}${reset} "
+      PS1="${cyan}${current_time}${reset} ${gray}\u@\h${reset} ${teal}${cwd}${reset}${git_segment} ${container}${red}[${exit_status}]${reset} ${red}${prompt_arrow}${reset} "
     fi
   }
 
@@ -146,12 +198,12 @@ if [ -n "${BLE_VERSION-}" ]; then
   bleopt complete_menu_style=align
   ble-face -s auto_complete none
   ble-face -s auto_complete 'fg=244,italic'
-  ble-face -s menu_complete_match fg=110
+  ble-face -s menu_complete_match fg=45
   ble-face -s menu_complete_selected 'fg=255,bg=236'
   ble-face -s menu_desc_default fg=245
   ble-face -s menu_filter_input 'fg=252,bg=236'
   ble-face -s syntax_error 'fg=203,underline'
-  ble-face -s syntax_command fg=78
+  ble-face -s syntax_command fg=37
   ble-bind -f 'C-left' backward-cword
   ble-bind -f 'C-right' forward-cword
   ble-bind -f 'C-BS' delete-backward-cword

@@ -18,8 +18,15 @@
 - `ble.sh` is installed and loaded
 - `fzf` and `zoxide` are installed in the current Fedora/Distrobox environment
 - Prompt is customized in `shell/bashrc.local`
+- Prompt fallback for plain Bash now matches the screenshot direction much more closely:
+  - time in bright blue
+  - `user@host` in muted gray
+  - working directory in teal
+  - git branch in lime with `±|branch`
+  - dirty state in red as `x|`
 - Prompt shows container context when inside Distrobox/container:
   - format: `[box:<name>]`
+- `shell/starship.toml` was updated to mirror the same prompt palette and structure when `starship` is installed
 - `git` completion issue caused by `fzf` overriding it was fixed by explicitly sourcing git completion and re-registering it
 
 ## Files that matter
@@ -174,15 +181,16 @@ Note:
 
 Current prompt direction:
 
-- two lines
-- user + host + path
-- git branch
-- container marker `[box:<name>]`
+- one line
+- `HH:MM:SS user@host cwd ±|branch x| ➜`
+- container marker `[box:<name>]` when relevant
+- same layout intended for both Bash fallback and `starship`
 
 Status:
 
-- acceptable
-- not finalized
+- much closer to the desired screenshot
+- colors were tuned after comparison against the reference image
+- still open to terminal-specific fine tuning if the emulator/theme shifts the palette
 
 ## Open questions for next session
 

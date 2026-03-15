@@ -181,9 +181,9 @@ if ! command -v starship >/dev/null 2>&1; then
     cwd='\w'
 
     if [ "$exit_status" -eq 0 ]; then
-      PS1="${cyan}${current_time}${reset} ${gray}\u@\h${reset} ${teal}${cwd}${reset}${git_segment} ${container}${lime}${prompt_arrow}${reset} "
+      PS1="${cyan}${current_time}${reset} ${gray}\u@\h${reset} ${teal}${cwd}${reset}${git_segment} ${container}\n${lime}${prompt_arrow}${reset} "
     else
-      PS1="${cyan}${current_time}${reset} ${gray}\u@\h${reset} ${teal}${cwd}${reset}${git_segment} ${container}${red}[${exit_status}]${reset} ${red}${prompt_arrow}${reset} "
+      PS1="${cyan}${current_time}${reset} ${gray}\u@\h${reset} ${teal}${cwd}${reset}${git_segment} ${container}${red}[${exit_status}]${reset}\n${red}${prompt_arrow}${reset} "
     fi
   }
 

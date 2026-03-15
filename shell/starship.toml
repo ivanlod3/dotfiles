@@ -1,4 +1,4 @@
-add_newline = false
+add_newline = true
 
 format = "$time$username$hostname$directory$git_branch$git_status$container$character"
 

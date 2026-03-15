@@ -27,6 +27,9 @@
 - Prompt shows container context when inside Distrobox/container:
   - format: `[box:<name>]`
 - `shell/starship.toml` was updated to mirror the same prompt palette and structure when `starship` is installed
+- Prompt now uses a two-line layout in both `starship` and the plain Bash fallback:
+  - status/context on the first line
+  - input cursor on the second line
 - `git` completion issue caused by `fzf` overriding it was fixed by explicitly sourcing git completion and re-registering it
 
 ## Files that matter
@@ -181,8 +184,9 @@ Note:
 
 Current prompt direction:
 
-- one line
-- `HH:MM:SS user@host cwd ±|branch x| ➜`
+- two lines
+- `HH:MM:SS user@host cwd ±|branch x|`
+- `➜`
 - container marker `[box:<name>]` when relevant
 - same layout intended for both Bash fallback and `starship`
 
@@ -190,6 +194,7 @@ Status:
 
 - much closer to the desired screenshot
 - colors were tuned after comparison against the reference image
+- newline before the input cursor was enabled on 2026-03-11
 - still open to terminal-specific fine tuning if the emulator/theme shifts the palette
 
 ## Open questions for next session
